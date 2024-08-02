@@ -17,6 +17,7 @@ import {addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query} from "@f
 import {db} from "@/app/firebase";
 import {index} from "@/app/algolia";
 import {useDebounce} from "@/hooks/usedebounce";
+import {Add, Delete, Edit, Remove} from "@mui/icons-material";
 
 type Item = {
     id?: string,
@@ -190,7 +191,7 @@ export default function Home() {
                         }}
                         onChange={handleChange}
                     />
-                    <Button variant='contained' type='submit'>+</Button>
+                    <Button variant='contained' type='submit'><Add/></Button>
                 </Box>
 
                 <List sx={{
@@ -224,9 +225,20 @@ export default function Home() {
                                     <ListItemText primary={item.category} sx={{ flex: 2 }} />
                                     <ListItemText primary={item.amount} sx={{ flex: 1, textAlign: 'right' }} />
                                 </Box>
-                                <Button variant='contained' onClick={() => handleRemove(item.id!)}>
-                                    X
-                                </Button>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        gap: 1
+                                    }}
+                                >
+                                    <Button variant='contained' onClick={() => handleRemove(item.id!)}>
+                                        <Edit/>
+                                    </Button>
+                                    <Button variant='contained' onClick={() => handleRemove(item.id!)}>
+                                        <Delete/>
+                                    </Button>
+                                </Box>
+
                             </ListItem>
                         ))
                     }
