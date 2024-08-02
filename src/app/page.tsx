@@ -1,95 +1,213 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import {
+    Box,
+    Button,
+    Container,
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemText,
+    TextField,
+    Typography
+} from "@mui/material";
+import {ChangeEvent, FormEvent, useEffect, useState} from "react";
+import SearchIcon from '@mui/icons-material/Search';
+import {addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query} from "@firebase/firestore";
+import {db} from "@/app/firebase";
+
+type Item = {
+    id?: string,
+    name: string;
+    category: string;
+    amount: number;
+};
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    const [items, setItems] = useState<Item[]>([]);
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+    const [item, setItem] = useState<Item>({
+        name: '',
+        category: '',
+        amount: 0
+    })
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        event.preventDefault()
+        const { name, value} = event.target
+        setItem({
+            ...item,
+            [name]: value
+        })
+    }
+
+    const addItem = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        await addDoc(collection(db, 'items'), {...item})
+        setItem({
+            name: '',
+            category: '',
+            amount: 0
+        })
+    }
+
+    const readItem = () => {
+
+    }
+
+    const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(event.target.value);
+        setItems(filteredItems);
+    };
+
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const handleRemove = async (id: string) => {
+        await deleteDoc(doc(db, 'items', id))
+    };
+
+    useEffect(() => {
+        const q =  query(collection(db, 'items'))
+        const unsubscribe = onSnapshot(q, querySnapshot => {
+            let itemsArr: any[] = []
+            querySnapshot.forEach(doc => {
+                itemsArr.push({...doc.data(), id: doc.id})
+            })
+            setItems(itemsArr)
+        })
+
+        return () => unsubscribe()
+    }, [])
+
+    return (
+        <Container
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: "100vh"
+            }}
         >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+            <Typography variant='h3' sx={{ marginBottom: '2rem' }}>Pantry Tracker</Typography>
+            <Box
+                component='div'
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    width: '100%',
+                    maxWidth: "800px",
+                    p: 4,
+                    backgroundColor: '#1E293B',
+                    borderRadius: 3
+                }}
+            >
+                <TextField
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+                <Box
+                    component='form'
+                    sx={{
+                        display: 'flex',
+                        gap: 2,
+                        width: '100%',
+                        maxWidth: "800px",
+                        backgroundColor: '#1E293B',
+                        borderRadius: 3,
+                        marginBottom: '2rem'
+                    }}
+                    onSubmit={addItem}
+                >
+                    <TextField
+                        label='Name'
+                        name='name'
+                        value={item.name}
+                        required
+                        sx={{
+                            flex: 2
+                        }}
+                        onChange={handleChange}
+                    />
+                    <TextField
+                        label='Category'
+                        name='category'
+                        value={item.category}
+                        required
+                        sx={{
+                            flex: 2
+                        }}
+                        onChange={handleChange}
+                    />
+                    <TextField
+                        label='Amount'
+                        name='amount'
+                        value={item.amount == 0 ? '' : item.amount}
+                        required
+                        sx={{
+                            flex: 1
+                        }}
+                        onChange={handleChange}
+                    />
+                    <Button variant='contained' type='submit'>+</Button>
+                </Box>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+                {
+                    items &&
+                    <List sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2
+                    }}>
+                        {
+                            items.map((item, index) => (
+                                <ListItem key={index} sx={{
+                                    py: 2,
+                                    width: '100%',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center', // Ensure alignment
+                                    backgroundColor: '#0F172A',
+                                    maxWidth: "800px",
+                                    borderRadius: 2,
+                                    gap: 3
+                                }}>
+                                    <Box
+                                        component='div'
+                                        sx={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <ListItemText primary={item.name} sx={{ flex: 2 }} />
+                                        <ListItemText primary={item.category} sx={{ flex: 2 }} />
+                                        <ListItemText primary={item.amount} sx={{ flex: 1, textAlign: 'right' }} />
+                                    </Box>
+                                    <Button variant='contained' onClick={() => handleRemove(item.id!)}>
+                                        X
+                                    </Button>
+                                </ListItem>
+                            ))
+                        }
+                    </List>
+                }
+            </Box>
+        </Container>
+    );
 }
