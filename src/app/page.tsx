@@ -15,6 +15,8 @@ import {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import SearchIcon from '@mui/icons-material/Search';
 import {addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query} from "@firebase/firestore";
 import {db} from "@/app/firebase";
+import {index} from "@/app/algolia";
+import {useDebounce} from "@/hooks/usedebounce";
 
 type Item = {
     id?: string,
@@ -25,14 +27,14 @@ type Item = {
 
 export default function Home() {
     const [items, setItems] = useState<Item[]>([]);
-
+    const [searchedItems, setSearchedItems] = useState<Item[]>([])
     const [item, setItem] = useState<Item>({
         name: '',
         category: '',
         amount: 0
     })
     const [searchQuery, setSearchQuery] = useState<string>('');
-
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         event.preventDefault()
@@ -45,7 +47,11 @@ export default function Home() {
 
     const addItem = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        await addDoc(collection(db, 'items'), {...item})
+        const docRef = await addDoc(collection(db, 'items'), { ...item });
+        const newItem = { ...item, id: docRef.id };
+
+        await index.saveObject({ ...newItem, objectID: newItem.id });
+
         setItem({
             name: '',
             category: '',
@@ -59,7 +65,7 @@ export default function Home() {
 
     const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
-        setItems(filteredItems);
+        // setItems(filteredItems);
     };
 
     const filteredItems = items.filter(item =>
@@ -69,7 +75,28 @@ export default function Home() {
 
     const handleRemove = async (id: string) => {
         await deleteDoc(doc(db, 'items', id))
+        await index.deleteObject(id);
     };
+
+    useEffect(() => {
+        const searchItems = async () => {
+            if (debouncedSearchQuery) {
+                const { hits } =
+                    await index.search<{ objectID: string; name: string; category: string; amount: number }>(debouncedSearchQuery);
+                const items: Item[] = hits.map(hit => ({
+                    id: hit.objectID,
+                    name: hit.name,
+                    category: hit.category,
+                    amount: hit.amount
+                }));
+                setSearchedItems(items)
+            } else {
+                setSearchedItems([])
+            }
+        };
+        searchItems();
+    }, [debouncedSearchQuery]);
+
 
     useEffect(() => {
         const q =  query(collection(db, 'items'))
@@ -166,47 +193,44 @@ export default function Home() {
                     <Button variant='contained' type='submit'>+</Button>
                 </Box>
 
-                {
-                    items &&
-                    <List sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2
-                    }}>
-                        {
-                            items.map((item, index) => (
-                                <ListItem key={index} sx={{
-                                    py: 2,
-                                    width: '100%',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center', // Ensure alignment
-                                    backgroundColor: '#0F172A',
-                                    maxWidth: "800px",
-                                    borderRadius: 2,
-                                    gap: 3
-                                }}>
-                                    <Box
-                                        component='div'
-                                        sx={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center'
-                                        }}
-                                    >
-                                        <ListItemText primary={item.name} sx={{ flex: 2 }} />
-                                        <ListItemText primary={item.category} sx={{ flex: 2 }} />
-                                        <ListItemText primary={item.amount} sx={{ flex: 1, textAlign: 'right' }} />
-                                    </Box>
-                                    <Button variant='contained' onClick={() => handleRemove(item.id!)}>
-                                        X
-                                    </Button>
-                                </ListItem>
-                            ))
-                        }
-                    </List>
-                }
+                <List sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2
+                }}>
+                    {
+                        (searchedItems.length > 0 ? searchedItems : items).map((item, index) => (
+                            <ListItem key={index} sx={{
+                                py: 2,
+                                width: '100%',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center', // Ensure alignment
+                                backgroundColor: '#0F172A',
+                                maxWidth: "800px",
+                                borderRadius: 2,
+                                gap: 3
+                            }}>
+                                <Box
+                                    component='div'
+                                    sx={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <ListItemText primary={item.name} sx={{ flex: 2 }} />
+                                    <ListItemText primary={item.category} sx={{ flex: 2 }} />
+                                    <ListItemText primary={item.amount} sx={{ flex: 1, textAlign: 'right' }} />
+                                </Box>
+                                <Button variant='contained' onClick={() => handleRemove(item.id!)}>
+                                    X
+                                </Button>
+                            </ListItem>
+                        ))
+                    }
+                </List>
             </Box>
         </Container>
     );
