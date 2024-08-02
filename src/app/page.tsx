@@ -13,11 +13,23 @@ import {
 } from "@mui/material";
 import {ChangeEvent, FormEvent, useEffect, useState} from "react";
 import SearchIcon from '@mui/icons-material/Search';
-import {addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query} from "@firebase/firestore";
+import {addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query, updateDoc} from "@firebase/firestore";
 import {db} from "@/app/firebase";
 import {index} from "@/app/algolia";
 import {useDebounce} from "@/hooks/usedebounce";
-import {Add, Delete, Edit, Remove} from "@mui/icons-material";
+import {
+    Add,
+    Cancel,
+    Delete,
+    Edit,
+    Remove,
+    Save,
+    SaveAlt,
+    SaveAltRounded,
+    SaveAsSharp,
+    SaveTwoTone
+} from "@mui/icons-material";
+import {isEqual} from 'lodash';
 
 type Item = {
     id?: string,
@@ -36,14 +48,27 @@ export default function Home() {
     })
     const [searchQuery, setSearchQuery] = useState<string>('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    const [updateIndex, setUpdateIndex] = useState<number>(-1)
+    const [updatedItem, setUpdatedItem] = useState<Item>({
+        name: '',
+        category: '',
+        amount: 0
+    })
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         event.preventDefault()
         const { name, value} = event.target
-        setItem({
-            ...item,
-            [name]: value
-        })
+        if (updateIndex !== -1) {
+            setUpdatedItem({
+                ...updatedItem,
+                [name]: value
+            })
+        } else {
+            setItem({
+                ...item,
+                [name]: value
+            })
+        }
     }
 
     const addItem = async (event: FormEvent<HTMLFormElement>) => {
@@ -78,6 +103,29 @@ export default function Home() {
         await deleteDoc(doc(db, 'items', id))
         await index.deleteObject(id);
     };
+
+    const handleEdit = (index: number, item: Item) => {
+        setUpdateIndex(index)
+        setUpdatedItem(item)
+    }
+
+    const cancelEdit = () => setUpdateIndex(-1)
+
+    const updateItem = async (initialItem: Item) => {
+        const docRef = doc(db, 'items', initialItem.id!)
+        await updateDoc(docRef, {...updatedItem})
+        const newUpdatedItem = { ...updatedItem, id: initialItem.id };
+
+        await index.saveObject({ ...newUpdatedItem, objectID: newUpdatedItem.id });
+
+        setUpdatedItem({
+            id: '',
+            name: '',
+            category: '',
+            amount: 0
+        });
+        setUpdateIndex(-1)
+    }
 
     useEffect(() => {
         const searchItems = async () => {
@@ -218,12 +266,24 @@ export default function Home() {
                                         width: '100%',
                                         display: 'flex',
                                         justifyContent: 'space-between',
-                                        alignItems: 'center'
+                                        alignItems: 'center',
+                                        gap: 2
                                     }}
                                 >
-                                    <ListItemText primary={item.name} sx={{ flex: 2 }} />
-                                    <ListItemText primary={item.category} sx={{ flex: 2 }} />
-                                    <ListItemText primary={item.amount} sx={{ flex: 1, textAlign: 'right' }} />
+                                    {
+                                        updateIndex === index ?
+                                            <>
+                                                <TextField name='name' value={updatedItem.name} label='Name' disabled/>
+                                                <TextField name='category' value={updatedItem.category} label='Category' onChange={handleChange}/>
+                                                <TextField name='amount' value={updatedItem.amount} label='Amount' onChange={handleChange}/>
+                                            </> :
+                                            <>
+                                                <ListItemText primary={item.name} sx={{ flex: 2 }} />
+                                                <ListItemText primary={item.category} sx={{ flex: 2 }} />
+                                                <ListItemText primary={item.amount} sx={{ flex: 1}} />
+                                            </>
+                                    }
+
                                 </Box>
                                 <Box
                                     sx={{
@@ -231,12 +291,26 @@ export default function Home() {
                                         gap: 1
                                     }}
                                 >
-                                    <Button variant='contained' onClick={() => handleRemove(item.id!)}>
-                                        <Edit/>
-                                    </Button>
-                                    <Button variant='contained' onClick={() => handleRemove(item.id!)}>
-                                        <Delete/>
-                                    </Button>
+                                    {
+                                        updateIndex === index ?
+                                            <>
+                                                <Button variant='contained' onClick={() => updateItem(item)}
+                                                        disabled={isEqual(item, updatedItem)}>
+                                                    <SaveAsSharp/>
+                                                </Button>
+                                                <Button variant='contained' onClick={cancelEdit}>
+                                                    <Cancel/>
+                                                </Button>
+                                            </> :
+                                            <>
+                                                <Button variant='contained' onClick={() => handleEdit(index, item)}>
+                                                    <Edit/>
+                                                </Button>
+                                                <Button variant='contained' onClick={() => handleRemove(item.id!)}>
+                                                    <Delete/>
+                                                </Button>
+                                            </>
+                                    }
                                 </Box>
 
                             </ListItem>
