@@ -18,8 +18,13 @@
     "firebase": "^10.12.5",
     "lodash": "^4.17.21",
     "next": "14.2.5",
+    "openai": "^4.54.0",
+    "pusher": "^5.2.0",
+    "pusher-js": "^8.4.0-rc2",
     "react": "^18",
-    "react-dom": "^18"
+    "react-camera-pro": "^1.4.0",
+    "react-dom": "^18",
+    "swr": "^2.2.5"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",

@@ -11,11 +11,11 @@ import {
     TextField,
     Typography
 } from "@mui/material";
-import {ChangeEvent, FormEvent, useEffect, useState} from "react";
+import {ChangeEvent, FormEvent, SetStateAction, useEffect, useState} from "react";
 import SearchIcon from '@mui/icons-material/Search';
 import {addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, query, updateDoc} from "@firebase/firestore";
-import {db} from "@/app/firebase";
-import {index} from "@/app/algolia";
+import {db} from "@/app/utils/firebase";
+import {index} from "@/app/utils/algolia";
 import {useDebounce} from "@/hooks/usedebounce";
 import {
     Add,
@@ -30,8 +30,9 @@ import {
     SaveTwoTone
 } from "@mui/icons-material";
 import {isEqual} from 'lodash';
+import {getPusherClient} from "@/app/utils/pusher-client";
 
-type Item = {
+export type Item = {
     id?: string,
     name: string;
     category: string;
@@ -57,7 +58,7 @@ export default function Home() {
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         event.preventDefault()
-        const { name, value} = event.target
+        const {name, value} = event.target
         if (updateIndex !== -1) {
             setUpdatedItem({
                 ...updatedItem,
@@ -73,10 +74,12 @@ export default function Home() {
 
     const addItem = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        const docRef = await addDoc(collection(db, 'items'), { ...item });
-        const newItem = { ...item, id: docRef.id };
 
-        await index.saveObject({ ...newItem, objectID: newItem.id });
+        await fetch('/api/items/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({item})
+        }).catch(error => console.log(error));
 
         setItem({
             name: '',
@@ -91,17 +94,13 @@ export default function Home() {
 
     const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
-        // setItems(filteredItems);
     };
 
-    const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     const handleRemove = async (id: string) => {
-        await deleteDoc(doc(db, 'items', id))
-        await index.deleteObject(id);
+        await fetch(`/api/items/${id}`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'}
+        }).catch(error => console.log(error));
     };
 
     const handleEdit = (index: number, item: Item) => {
@@ -112,33 +111,30 @@ export default function Home() {
     const cancelEdit = () => setUpdateIndex(-1)
 
     const updateItem = async (initialItem: Item) => {
-        const docRef = doc(db, 'items', initialItem.id!)
-        await updateDoc(docRef, {...updatedItem})
-        const newUpdatedItem = { ...updatedItem, id: initialItem.id };
-
-        await index.saveObject({ ...newUpdatedItem, objectID: newUpdatedItem.id });
-
-        setUpdatedItem({
-            id: '',
-            name: '',
-            category: '',
-            amount: 0
-        });
-        setUpdateIndex(-1)
+        await fetch('/api/items/update', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: initialItem.id, updatedItem})
+        }).then(() => {
+            setUpdatedItem({
+                id: '',
+                name: '',
+                category: '',
+                amount: 0
+            });
+            setUpdateIndex(-1)
+        }).catch(error => console.log(error));
     }
 
     useEffect(() => {
         const searchItems = async () => {
             if (debouncedSearchQuery) {
-                const { hits } =
-                    await index.search<{ objectID: string; name: string; category: string; amount: number }>(debouncedSearchQuery);
-                const items: Item[] = hits.map(hit => ({
-                    id: hit.objectID,
-                    name: hit.name,
-                    category: hit.category,
-                    amount: hit.amount
-                }));
-                setSearchedItems(items)
+                const response = await fetch(`/api/items/search?query=${debouncedSearchQuery}`, {
+                    method: 'GET',
+                    headers: {'Content-Type': 'application/json'},
+                });
+                const items = await response.json();
+                setSearchedItems(items);
             } else {
                 setSearchedItems([])
             }
@@ -148,17 +144,39 @@ export default function Home() {
 
 
     useEffect(() => {
-        const q =  query(collection(db, 'items'))
-        const unsubscribe = onSnapshot(q, querySnapshot => {
-            let itemsArr: any[] = []
-            querySnapshot.forEach(doc => {
-                itemsArr.push({...doc.data(), id: doc.id})
-            })
-            setItems(itemsArr)
+        // const fetchItems = async () => {
+        //     try {
+        //         const response = await fetch('/api/items/search', {
+        //             method: 'GET',
+        //             headers: { 'Content-Type': 'application/json' },
+        //         });
+        //         if (!response.ok) {
+        //             throw new Error('Network response was not ok');
+        //         }
+        //         const items = await response.json();
+        //         setItems(items);
+        //     } catch (error) {
+        //         console.error('Error fetching items:', error);
+        //     }
+        // };
+        // fetchItems();
+        fetch('/api/init-pusher', {
+            method: 'POST'
+        }).then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error initializing pusher:', error));
+
+        const pusher = getPusherClient();
+        const channel = pusher.subscribe('items')
+        channel.bind('item-change', (data: { items: SetStateAction<Item[]>; }) => {
+            setItems(data.items)
         })
 
-        return () => unsubscribe()
-    }, [])
+        return () => {
+            channel.unbind('item-change')
+            channel.unsubscribe()
+        }
+    }, []);
 
     return (
         <Container
