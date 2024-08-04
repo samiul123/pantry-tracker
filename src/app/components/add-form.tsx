@@ -12,7 +12,7 @@ import {
 } from "@mui/icons-material";
 import {Item} from "@/app/page";
 import React, {ChangeEvent, FormEvent, useRef, useState} from "react";
-import InputField from "@/app/input-field";
+import InputField from "@/app/components/input-field";
 import {Camera, CameraType} from "react-camera-pro";
 import Image from "next/image";
 
