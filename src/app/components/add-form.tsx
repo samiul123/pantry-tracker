@@ -6,7 +6,7 @@ import {
     ArrowBack
 } from "@mui/icons-material";
 import {Item} from "@/app/page";
-import React, {ChangeEvent, FormEvent, useRef, useState} from "react";
+import React, {ChangeEvent, FormEvent, useEffect, useRef, useState} from "react";
 import InputField from "@/app/components/input-field";
 import {CameraType} from "react-camera-pro";
 import {ImageField} from "@/app/components/image-field";
@@ -66,18 +66,42 @@ export default function AddForm() {
         setImage(null)
     }
 
+    const handleClearItem = () => setItem({
+        name: '',
+        category: '',
+        amount: 0
+    })
+
+    useEffect(() => {
+        if (image) {
+            fetch('/api/items/parse-image', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response: ", data)
+                    setItem({...data})
+                })
+                .catch(error => {
+                    console.log("Error: ", error)
+                })
+        }
+    }, [image]);
+
     return (
         <Box>
-            {
-                inputType === '' &&
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-                    <Button variant='outlined' onClick={() => setInputType('text')}>Text</Button>
-                    <Button variant='outlined' onClick={() => setInputType('image')}>Image</Button>
-                </Box>
-            }
+            {/*{*/}
+            {/*    inputType === '' &&*/}
+            {/*    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>*/}
+            {/*        <Button variant='outlined' onClick={() => setInputType('text')}>Text</Button>*/}
+            {/*        <Button variant='outlined' onClick={() => setInputType('image')}>Image</Button>*/}
+            {/*    </Box>*/}
+            {/*}*/}
 
             {
-                inputType !== '' &&
+                // inputType !== '' &&
                 <Box
                     component="form"
                     sx={{
@@ -88,19 +112,21 @@ export default function AddForm() {
                     }}
                     onSubmit={addItem}
                 >
-                    {
-                        inputType === 'text' &&
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2
+                    }}>
                         <InputField item={item} onChange={handleChange}/>
-                    }
-                    {
-                        inputType === 'image' &&
                         <ImageField
                             image={image}
                             cameraRef={cameraRef}
                             clearImage={handleClearImage}
+                            clearItem={handleClearItem}
                             onCapture={handleCapture}
                         />
-                    }
+                    </Box>
+
 
                     <Box sx={{
                         display: 'flex',

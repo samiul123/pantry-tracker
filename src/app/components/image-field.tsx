@@ -9,12 +9,14 @@ type ImageFieldProps = {
     onCapture: () => void
     cameraRef: RefObject<CameraType>
     clearImage: () => void
+    clearItem: () => void
 }
 
 export const ImageField: React.FC<ImageFieldProps> = ({image,
                                                           onCapture,
                                                           cameraRef,
-                                                          clearImage}) => {
+                                                          clearImage,
+                                                          clearItem}) => {
 
     const errorMessages = {
         noCameraAccessible: 'No camera device accessible. Please connect a camera or try a different browser.',
@@ -71,7 +73,10 @@ export const ImageField: React.FC<ImageFieldProps> = ({image,
                                         backgroundColor: 'rgba(0, 0, 0, 0.7)',
                                     }
                                 }}
-                                onClick={clearImage}
+                                onClick={() => {
+                                    clearImage()
+                                    clearItem()
+                                }}
                             >
                                 <Cancel/>
                             </IconButton>
