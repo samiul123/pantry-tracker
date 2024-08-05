@@ -1,20 +1,15 @@
 'use client'
 
-import {Box, Button, IconButton, TextField} from "@mui/material";
+import {Box, Button} from "@mui/material";
 import {
     Add,
-    ArrowBack,
-    BrokenImageSharp,
-    CameraSharp,
-    Cancel,
-    ImageAspectRatio,
-    ImageOutlined
+    ArrowBack
 } from "@mui/icons-material";
 import {Item} from "@/app/page";
 import React, {ChangeEvent, FormEvent, useRef, useState} from "react";
 import InputField from "@/app/components/input-field";
-import {Camera, CameraType} from "react-camera-pro";
-import Image from "next/image";
+import {CameraType} from "react-camera-pro";
+import {ImageField} from "@/app/components/image-field";
 
 type InputType = 'text' | 'image' | ''
 
@@ -25,14 +20,17 @@ export default function AddForm() {
         category: '',
         amount: 0
     })
-    const cameraRef = useRef<CameraType>(null);
     const [image, setImage] = useState<string | ImageData | null>(null);
-    const errorMessages = {
-        noCameraAccessible: 'No camera device accessible. Please connect a camera or try a different browser.',
-        permissionDenied: 'Camera permission denied. Please grant camera access in your browser settings.',
-        switchCamera: 'It is not possible to switch camera to different one because there is only one video device accessible.',
-        canvas: 'Canvas is not supported.',
-    };
+    const cameraRef = useRef<CameraType>(null);
+
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+        event.preventDefault()
+        const {name, value} = event.target
+        setItem({
+            ...item,
+            [name]: value
+        })
+    }
 
     const handleCapture = () => {
         if (cameraRef.current) {
@@ -45,14 +43,7 @@ export default function AddForm() {
 
     };
 
-    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-        event.preventDefault()
-        const {name, value} = event.target
-        setItem({
-            ...item,
-            [name]: value
-        })
-    }
+    const handleClearImage = () => setImage(null)
 
     const addItem = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -103,70 +94,18 @@ export default function AddForm() {
                     }
                     {
                         inputType === 'image' &&
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2
-                        }}>
-                            <Box
-                                sx={{
-                                    width: 200,
-                                    height: 200,
-                                    position: 'relative',
-                                    flex: '0 0 200px',
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    border: '1px solid gray'
-                                }}
-                            >
-                                <Camera
-                                    ref={cameraRef}
-                                    errorMessages={errorMessages}
-                                />
-                            </Box>
-                            {(
-                                <Box sx={{
-                                    width: 200,
-                                    height: 200,
-                                    flex: '0 0 200px',
-                                    position: 'relative',
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                }}>
-                                    {image ? (
-                                        <>
-                                            <Image src={image as string} alt='image' layout="fill" objectFit="cover" />
-                                            <IconButton
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    right: 0,
-                                                    color: 'white',
-                                                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                                    '&:hover': {
-                                                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                                                    }
-                                                }}
-                                                onClick={() => setImage(null)}
-                                            >
-                                                <Cancel/>
-                                            </IconButton>
-                                        </>
-                                    ) : (
-                                        <ImageOutlined sx={{ fontSize: 100, color: 'gray' }} />
-                                    )}
-                                </Box>
-                            )}
-                        </Box>
+                        <ImageField
+                            image={image}
+                            cameraRef={cameraRef}
+                            clearImage={handleClearImage}
+                            onCapture={handleCapture}
+                        />
                     }
 
                     <Box sx={{
                         display: 'flex',
                         gap: 2
                     }}>
-                        {inputType === 'image' && <Button variant="contained" onClick={handleCapture}><CameraSharp/></Button>}
                         <Button variant="contained" type="submit"><Add /></Button>
                         <Button variant="contained" type="button" onClick={handleBack}><ArrowBack /></Button>
                     </Box>
