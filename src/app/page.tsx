@@ -11,8 +11,8 @@ import {ChangeEvent, FormEvent, SetStateAction, useEffect, useState} from "react
 import SearchIcon from '@mui/icons-material/Search';
 import {useDebounce} from "@/hooks/usedebounce";
 import {getPusherClient} from "@/app/utils/pusher-client";
-import AddForm from "@/app/components/add-form";
-import {ItemList} from "@/app/components/item-list";
+import AddForm from "@/app/components/addForm";
+import {ItemList} from "@/app/components/itemList";
 
 export type Item = {
     id?: string

@@ -3,20 +3,23 @@ import {Camera, CameraType} from "react-camera-pro";
 import Image from "next/image";
 import {Cancel, ImageOutlined} from "@mui/icons-material";
 import React, {RefObject} from "react";
+import {FacingMode} from "react-camera-pro/dist/components/Camera/types";
 
 type ImageFieldProps = {
     image: string | ImageData | null
-    onCapture: () => void
     cameraRef: RefObject<CameraType>
     clearImage: () => void
     clearItem: () => void
+    facingMode: FacingMode
 }
 
-export const ImageField: React.FC<ImageFieldProps> = ({image,
-                                                          onCapture,
+export const CustomCamera: React.FC<ImageFieldProps> = ({
+                                                          image,
                                                           cameraRef,
                                                           clearImage,
-                                                          clearItem}) => {
+                                                          clearItem,
+                                                          facingMode
+                                                      }) => {
 
     const errorMessages = {
         noCameraAccessible: 'No camera device accessible. Please connect a camera or try a different browser.',
@@ -42,11 +45,11 @@ export const ImageField: React.FC<ImageFieldProps> = ({image,
                     alignItems: 'center',
                     border: '1px solid gray'
                 }}
-                onClick={onCapture}
             >
                 <Camera
                     ref={cameraRef}
                     errorMessages={errorMessages}
+                    facingMode={facingMode}
                 />
             </Box>
             {(
@@ -61,7 +64,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({image,
                 }}>
                     {image ? (
                         <>
-                            <Image src={image as string} alt='image' layout="fill" objectFit="cover" />
+                            <Image src={image as string} alt='image' layout="fill" objectFit="cover"/>
                             <IconButton
                                 sx={{
                                     position: 'absolute',
@@ -82,7 +85,7 @@ export const ImageField: React.FC<ImageFieldProps> = ({image,
                             </IconButton>
                         </>
                     ) : (
-                        <ImageOutlined sx={{ fontSize: 100, color: 'gray' }} />
+                        <ImageOutlined sx={{fontSize: 100, color: 'gray'}}/>
                     )}
                 </Box>
             )}

@@ -5,7 +5,7 @@ import {index} from "@/app/utils/algolia";
 
 export async function POST(req: NextRequest) {
     try {
-        const item = await req.json().then(res => res.item);
+        const item = await req.json().then(res => res.data);
         const docRef = await addDoc(collection(db, 'items'), item);
         const newItem = { ...item, id: docRef.id };
         await index.saveObject({ ...newItem, objectID: newItem.id });
