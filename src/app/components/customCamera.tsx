@@ -1,3 +1,5 @@
+'use client'
+
 import {Box, IconButton} from "@mui/material";
 import {Camera, CameraType} from "react-camera-pro";
 import Image from "next/image";

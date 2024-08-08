@@ -5,13 +5,15 @@ import {isEqual} from "lodash";
 import {Cancel, Delete, Edit, SaveAsSharp} from "@mui/icons-material";
 import {Item} from "@/app/page";
 import React, {ChangeEvent, useState} from "react";
+import {useDispatch} from "react-redux";
+import {removeItem, setItems, updateItem} from "@/lib/itemsSlice";
 
 type Props = {
     items: Item[]
 }
 
 export const ItemList:React.FC<Props> = ({ items}) => {
-
+    const dispatch = useDispatch()
     const [updatedItem, setUpdatedItem] = useState<Item>({
         name: '',
         category: '',
@@ -37,18 +39,20 @@ export const ItemList:React.FC<Props> = ({ items}) => {
 
     const cancelEdit = () => setUpdateIndex(-1)
 
-    const updateItem = async (initialItem: Item) => {
+    const handleUpdateItem = async (initialItem: Item) => {
         await fetch('/api/items/update', {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({id: initialItem.id, updatedItem})
         }).then(() => {
+            dispatch(updateItem(updatedItem))
             setUpdatedItem({
                 id: '',
                 name: '',
                 category: '',
                 amount: 0
             });
+
             setUpdateIndex(-1)
         }).catch(error => console.log(error));
     }
@@ -57,7 +61,9 @@ export const ItemList:React.FC<Props> = ({ items}) => {
         await fetch(`/api/items/${id}`, {
             method: 'DELETE',
             headers: {'Content-Type': 'application/json'}
-        }).catch(error => console.log(error));
+        })
+            .then(() => dispatch(removeItem(id)))
+            .catch(error => console.log(error));
     };
 
     return (
@@ -67,7 +73,7 @@ export const ItemList:React.FC<Props> = ({ items}) => {
             gap: 2
         }}>
             {
-                items.map((item, index) => (
+                items?.map((item, index) => (
                     <ListItem key={index} sx={{
                         py: 2,
                         width: '100%',
@@ -80,7 +86,7 @@ export const ItemList:React.FC<Props> = ({ items}) => {
                         gap: 3
                     }}>
                         <Box
-                            component='div'
+                            // component='div'
                             sx={{
                                 width: '100%',
                                 display: 'flex',
@@ -115,7 +121,7 @@ export const ItemList:React.FC<Props> = ({ items}) => {
                             {
                                 updateIndex === index ?
                                     <>
-                                        <Button variant='contained' onClick={() => updateItem(item)}
+                                        <Button variant='contained' onClick={() => handleUpdateItem(item)}
                                                 disabled={isEqual(item, updatedItem)}>
                                             <SaveAsSharp/>
                                         </Button>

@@ -1,3 +1,5 @@
+'use client'
+
 import React, {RefObject} from "react";
 import {CameraType} from "react-camera-pro";
 import {Item} from "@/app/page";

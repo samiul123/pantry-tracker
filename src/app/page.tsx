@@ -3,16 +3,17 @@
 import {
     Box,
     Container,
-    InputAdornment,
+    InputAdornment, TablePagination,
     TextField,
     Typography
 } from "@mui/material";
-import {ChangeEvent, FormEvent, SetStateAction, useEffect, useState} from "react";
+import React, {ChangeEvent, useEffect, useState} from "react";
 import SearchIcon from '@mui/icons-material/Search';
 import {useDebounce} from "@/hooks/usedebounce";
-import {getPusherClient} from "@/app/utils/pusher-client";
 import AddForm from "@/app/components/addForm";
 import {ItemList} from "@/app/components/itemList";
+import {useAppDispatch, useAppSelector} from "@/lib/hooks";
+import {setItems} from "@/lib/itemsSlice";
 
 export type Item = {
     id?: string
@@ -22,51 +23,43 @@ export type Item = {
 };
 
 export default function Home() {
-    const [items, setItems] = useState<Item[]>([]);
-    const [searchedItems, setSearchedItems] = useState<Item[]>([])
+    const dispatch = useAppDispatch()
+    const {items, totalItems}  = useAppSelector((state) => state)
     const [searchQuery, setSearchQuery] = useState<string>('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    const [page, setPage] = useState<number>(0);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
     const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
     };
 
-    useEffect(() => {
-        const searchItems = async () => {
-            if (debouncedSearchQuery) {
-                const response = await fetch(`/api/items/search?query=${debouncedSearchQuery}`, {
-                    method: 'GET',
-                    headers: {'Content-Type': 'application/json'},
-                });
-                const items = await response.json();
-                setSearchedItems(items);
-            } else {
-                setSearchedItems([])
-            }
-        };
-        searchItems();
-    }, [debouncedSearchQuery]);
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
 
+    const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
 
     useEffect(() => {
-        fetch('/api/init-pusher', {
-            method: 'POST'
-        }).then(response => response.json())
-            .then(data => console.log(data))
-            .catch(error => console.error('Error initializing pusher:', error));
-
-        const pusher = getPusherClient();
-        const channel = pusher.subscribe('items')
-        channel.bind('item-change', (data: { items: SetStateAction<Item[]>; }) => {
-            console.log("Date received: ", data)
-            setItems(data.items)
+        fetch(`/api/items/search?query=${debouncedSearchQuery}&page=${page}&limit=${rowsPerPage}`, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'},
         })
+            .then(response => response.json())
+            .then(data => dispatch(setItems(data)))
+    }, [debouncedSearchQuery, page, rowsPerPage]);
 
-        return () => {
-            channel.unbind('item-change')
-            channel.unsubscribe()
-        }
-    }, []);
+    useEffect(() => {
+        fetch(`/api/items/search?query=&page=${page}&limit=${rowsPerPage}`, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json'},
+        })
+            .then(response => response.json())
+            .then(data => dispatch(setItems(data)))
+    }, [page, rowsPerPage]);
 
     return (
         <Container
@@ -75,7 +68,7 @@ export default function Home() {
                 flexDirection: "column",
                 justifyContent: 'center',
                 alignItems: 'center',
-                height: "100vh"
+                height: "50%"
             }}
         >
             <Typography variant='h3' sx={{marginBottom: '2rem'}}>Pantry Tracker</Typography>
@@ -106,8 +99,14 @@ export default function Home() {
                 />
 
                 <AddForm/>
-
-                <ItemList items={searchedItems.length > 0 ? searchedItems : items} />
+                <ItemList items={items}/>
+                <TablePagination
+                    component='div'
+                    count={totalItems}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}/>
             </Box>
         </Container>
     );

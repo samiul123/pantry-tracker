@@ -8,8 +8,11 @@ import InputField from "@/app/components/inputField";
 import {CameraType} from "react-camera-pro";
 import {FacingMode} from "react-camera-pro/dist/components/Camera/types";
 import CameraDialog from "@/app/components/cameraDialog";
+import {addItem} from "@/lib/itemsSlice";
+import {useDispatch} from "react-redux";
 
 export default function AddForm() {
+    const dispatch = useDispatch()
     const [item, setItem] = useState<Item>({
         name: '',
         category: '',
@@ -54,7 +57,7 @@ export default function AddForm() {
 
     const handleClearImage = () => setImage(null)
 
-    const addItem = async (event: FormEvent<HTMLFormElement>) => {
+    const handleAddItem = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
         const data = item.name && item.category && item.amount != 0 ? item : cameraItem
@@ -63,7 +66,9 @@ export default function AddForm() {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({data})
-        }).catch(error => console.log(error));
+        })
+            .then(() => dispatch(addItem(data)))
+            .catch(error => console.log(error));
 
         if (showCamera) {
             handleCloseCamera()
@@ -120,7 +125,7 @@ export default function AddForm() {
                 alignItems: "center",
                 gap: 2
             }}
-            onSubmit={addItem}
+            onSubmit={handleAddItem}
         >
             <Box sx={{
                 display: 'flex',
@@ -132,7 +137,7 @@ export default function AddForm() {
                     showCamera &&
                     <CameraDialog open={showCamera}
                                   onClose={handleCloseCamera}
-                                  onSubmit={addItem}
+                                  onSubmit={handleAddItem}
                                   image={image}
                                   cameraRef={cameraRef}
                                   clearImage={handleClearImage}
