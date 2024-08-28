@@ -1,4 +1,16 @@
+# Pantry Tracker
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+The project is a demo version of a pantry or inventory tracker. People can add, update, delete and search items in the inventory.
+Besides manual intervention, this app supports automatic product add by scanning as well.
+
+## Tools Used
+- **Firebase Cloud Store** to store the items
+- **React Camera Pro** to scan the items
+- **Algolia Search** for text based search
+- **Next.js** for fullstack development
+- **Open AI Vision API** to parse the image
 
 ## Getting Started
 
