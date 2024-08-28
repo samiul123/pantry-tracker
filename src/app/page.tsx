@@ -19,7 +19,7 @@ export type Item = {
     id?: string
     name: string
     category: string
-    amount: number
+    amount: string | number
 };
 
 export default function Home() {

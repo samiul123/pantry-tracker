@@ -21,6 +21,7 @@ export default function CameraDialog(props: {
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void,
     onCameraSwitch: () => void,
     onCapture: () => void
+    errors: Record<string, string | null>
 }) {
     return <Dialog
         open={props.open}
@@ -54,7 +55,7 @@ export default function CameraDialog(props: {
                     clearItem={props.clearItem}
                     facingMode={props.facingMode}
                 />
-                <InputField item={props.item} onChange={props.onChange}/>
+                <InputField item={props.item} onChange={props.onChange} errors={props.errors}/>
             </DialogContent>
             <DialogActions>
                 <Button onClick={props.onCameraSwitch}><Cameraswitch/></Button>

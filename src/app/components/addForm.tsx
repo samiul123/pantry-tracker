@@ -16,7 +16,7 @@ export default function AddForm() {
     const [item, setItem] = useState<Item>({
         name: '',
         category: '',
-        amount: 0
+        amount: ''
     })
     const [image, setImage] = useState<string | ImageData | null>(null);
     const cameraRef = useRef<CameraType>(null);
@@ -25,24 +25,60 @@ export default function AddForm() {
     const [cameraItem, setCameraItem] = useState<Item>({
         name: '',
         category: '',
-        amount: 0
+        amount: ''
     })
+
+    const [errors, setErrors] = useState<Record<string, string | null>>({});
+
+    function isNumeric(value: string): boolean {
+        return /[1-9][0-9]*/.test(value);
+    }
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         event.preventDefault()
         const {name, value} = event.target
+
+        if (name === 'amount' && !isNumeric(value)) {
+            setErrors({[name]: 'Input must be number'})
+            return
+        }
+        if (['name', 'category'].includes(name) && isNumeric(value)) {
+            setErrors({[name]: 'Input must be text'})
+            return
+        }
+        console.log("name: ", name, value)
+
         if (showCamera) {
             setCameraItem({
                 ...item,
-                [name]: value
+                [name]: isNumeric(value) ? Number(value) : value
             })
         } else {
             setItem({
                 ...item,
-                [name]: value
+                [name]: isNumeric(value) ? Number(value) : value
             })
         }
+        setErrors({ ...errors, [name]: null });
     }
+
+    const validateFields = (data: Item) => {
+        const newErrors: Record<string, string | null> = {};
+
+        for (const key in data) {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                const value = data[key as keyof Item];
+                if (typeof value === 'string' && value.trim() === '') {
+                    newErrors[key] = 'Required'
+                } else if (typeof value === 'number' && value <= 0) {
+                    newErrors[key] = 'Must be greater than 0'
+                }
+            }
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleCapture = () => {
         if (cameraRef.current) {
@@ -60,7 +96,11 @@ export default function AddForm() {
     const handleAddItem = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
-        const data = item.name && item.category && item.amount != 0 ? item : cameraItem
+        const data = showCamera ? cameraItem : item
+
+        if (!validateFields(data)) {
+            return;  // If validation fails, do not proceed
+        }
 
         await fetch('/api/items/add', {
             method: 'POST',
@@ -126,13 +166,14 @@ export default function AddForm() {
                 gap: 2
             }}
             onSubmit={handleAddItem}
+            noValidate
         >
             <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2
             }}>
-                <InputField item={item} onChange={handleChange}/>
+                <InputField item={item} onChange={handleChange} errors={errors}/>
                 {
                     showCamera &&
                     <CameraDialog open={showCamera}
@@ -146,7 +187,9 @@ export default function AddForm() {
                                   item={cameraItem}
                                   onChange={handleChange}
                                   onCameraSwitch={handleSwitchCamera}
-                                  onCapture={handleCapture}/>
+                                  onCapture={handleCapture}
+                                  errors={errors}
+                    />
                 }
             </Box>
 
