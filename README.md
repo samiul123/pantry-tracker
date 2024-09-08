@@ -3,7 +3,9 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 The project is a demo version of a pantry or inventory tracker. People can add, update, delete and search items in the inventory.
-Besides manual intervention, this app supports automatic product add by scanning as well.
+Besides manual intervention, this app supports automatic product add by **OpenAI VISION API** as well. Once the item is captured 
+by the camera, the application sends the data to the Vision API to identify the item and it's count and put the values in respective form fields. Then, user 
+can opt for either add the item or not.
 
 ## Tools Used
 - **Firebase Cloud Store** to store the items
