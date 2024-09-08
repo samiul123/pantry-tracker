@@ -37,5 +37,5 @@ This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-opti
 The app is deployed on vercel https://pantry-tracker-virid-two.vercel.app. Check it out.
 
 ## Demo
-Check the [![demo video](assets/demo-thumbnail.png)](assets/demo.mov).
+Check the demo. [![demo video](assets/demo-thumbnail.png)](https://www.youtube.com/watch?v=zhoE1n_9urw).
 
