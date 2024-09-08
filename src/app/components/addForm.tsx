@@ -39,11 +39,11 @@ export default function AddForm() {
         event.preventDefault()
         const {name, value} = event.target
 
-        if (name === 'amount' && !isNumeric(value)) {
+        if (name === 'amount' && value !== '' && !isNumeric(value)) {
             setErrors({[name]: 'Input must be number'})
             return
         }
-        if (['name', 'category'].includes(name) && isNumeric(value)) {
+        if (['name', 'category'].includes(name) && value !== '' && isNumeric(value)) {
             setErrors({[name]: 'Input must be text'})
             return
         }
@@ -61,6 +61,7 @@ export default function AddForm() {
             })
         }
         setErrors({ ...errors, [name]: null });
+        setCameraErrors({ ...errors, [name]: null })
     }
 
     const validateFields = (data: Item) => {
@@ -118,7 +119,7 @@ export default function AddForm() {
             setItem({
                 name: '',
                 category: '',
-                amount: 0
+                amount: ''
             })
         }
     }
@@ -126,7 +127,7 @@ export default function AddForm() {
     const handleClearCameraItem = () => setCameraItem({
         name: '',
         category: '',
-        amount: 0
+        amount: ''
     })
 
     const handleSwitchCamera = () => {

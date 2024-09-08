@@ -29,7 +29,6 @@ export default function CameraDialog(props: {
     >
         <Box
             component="form"
-            onSubmit={props.onSubmit}
             sx={{
                 display: "flex",
                 flexDirection: "column",
