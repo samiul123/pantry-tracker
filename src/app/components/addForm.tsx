@@ -29,6 +29,7 @@ export default function AddForm() {
     })
 
     const [errors, setErrors] = useState<Record<string, string | null>>({});
+    const [cameraErrors, setCameraErrors] = useState<Record<string, string | null>>({});
 
     function isNumeric(value: string): boolean {
         return /[1-9][0-9]*/.test(value);
@@ -76,7 +77,8 @@ export default function AddForm() {
             }
         }
 
-        setErrors(newErrors);
+        if (showCamera) setCameraErrors(newErrors)
+        else setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
@@ -136,6 +138,12 @@ export default function AddForm() {
         setImage(null)
         setFacingMode('environment')
         handleClearCameraItem()
+        setCameraErrors({})
+    }
+
+    const handleOpenCamera = () => {
+        setShowCamera(true)
+        setErrors({})
     }
 
     useEffect(() => {
@@ -188,7 +196,7 @@ export default function AddForm() {
                                   onChange={handleChange}
                                   onCameraSwitch={handleSwitchCamera}
                                   onCapture={handleCapture}
-                                  errors={errors}
+                                  errors={cameraErrors}
                     />
                 }
             </Box>
@@ -198,7 +206,7 @@ export default function AddForm() {
                 gap: 2,
                 height: '100%'
             }}>
-                <Button variant="contained" onClick={() => setShowCamera(true)}><CameraSharp/></Button>
+                <Button variant="contained" onClick={handleOpenCamera}><CameraSharp/></Button>
                 <Button variant="contained" type="submit"><Add /></Button>
             </Box>
         </Box>

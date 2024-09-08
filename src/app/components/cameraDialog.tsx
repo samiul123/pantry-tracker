@@ -37,6 +37,7 @@ export default function CameraDialog(props: {
                 alignItems: "center",
                 backgroundColor: "#1E293B"
             }}
+            noValidate
         >
             <DialogTitle>Take photo</DialogTitle>
             <DialogContent
